@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Household Finance CI/CD</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.login-screen { display: flex; justify-content: center; align-items: center; min-height: 80vh; flex-direction: column; }
+.login-btn { padding: 15px 30px; margin: 10px; border: none; border-radius: 50px; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+.husband { background: #4CAF50; color: white; }
+.wife { background: #2196F3; color: white; }
+.login-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+.dashboard { display: none; }
+.header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.balance-card { background: linear-gradient(45deg, #ff6b6b, #feca57); color: white; padding: 30px; border-radius: 20px; text-align: center; font-size: 24px; font-weight: bold; }
+.notification { position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(400px); transition: all 0.3s; z-index: 1000; }
+.notification.show { transform: translateX(0); }
+.form-group { margin-bottom: 20px; }
+input, select, button { padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px; }
+button { background: #667eea; color: white; border: none; cursor: pointer; transition: background 0.3s; }
+button:hover { background: #5a67d8; }
+.transaction-list { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.transaction { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; }
+.transaction:last-child { border-bottom: none; }
+.alert-badge { background: #ff4444; color: white; border-radius: 50%; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; margin-left: 10px; }
+@media (max-width: 768px) { .container { padding: 10px; } .header { flex-direction: column; gap: 15px; text-align: center; } }
+</style>
+</head>
+<body>
+<div class="container">
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+<h1 style="color: white; font-size: 48px; margin-bottom: 40px;">Household Finance</h1>
+<p style="color: white; font-size: 20px; margin-bottom: 40px;">CI/CD Pipeline for Family Budget</p>
+<button class="login-btn husband" onclick="login('husband')">👨 Husband Login</button>
+<button class="login-btn wife" onclick="login('wife')">👩 Wife Login</button>
+</div>
+
+<!-- Husband Dashboard -->
+<div id="husbandDashboard" class="dashboard">
+<div class="header">
+<h2>👨 Husband Dashboard <span id="husbandAlerts" class="alert-badge" style="display: none;">0</span></h2>
+<button onclick="logout()" style="background: #ff4444; padding: 10px 20px;">Logout</button>
+</div>
+<div class="balance-card" id="husbandBalance">Balance: ₹0</div>
+<!-- Forms -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+<div class="form-group">
+<h3>Add Income</h3>
+<input id="husbandIncomeAmount" placeholder="Amount ₹" type="number">
+<input id="husbandIncomeDesc" placeholder="Description">
+<button onclick="addIncome('husband')">💰 Add Income</button>
+</div>
+<div class="form-group">
+<h3>Add EMI/Expense</h3>
+<input id="husbandExpenseAmount" placeholder="Amount ₹" type="number">
+<input id="husbandExpenseDesc" placeholder="Description">
+<select id="husbandExpenseType">
+<option value="EMI">Loan EMI</option>
+<option value="Expense">Household Expense</option>
+</select>
+<button onclick="addExpense('husband')">💸 Add Transaction</button>
+</div>
+</div>
+<div class="transaction-list">
+<h3>Recent Transactions</h3>
+<div id="husbandTransactions"></div>
+</div>
+</div>
+
+<!-- Wife Dashboard -->
+<div id="wifeDashboard" class="dashboard">
+<div class="header">
+<h2>👩 Wife Dashboard <span id="wifeAlerts" class="alert-badge" style="display: none;">0</span></h2>
+<button onclick="logout()" style="background: #ff4444; padding: 10px 20px;">Logout</button>
+</div>
+<div class="balance-card" id="wifeBalance">Balance: ₹0</div>
+<!-- Forms (same structure as husband) -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+<div class="form-group">
+<h3>Add Income</h3>
+<input id="wifeIncomeAmount" placeholder="Amount ₹" type="number">
+<input id="wifeIncomeDesc" placeholder="Description">
+<button onclick="addIncome('wife')">💰 Add Income</button>
+</div>
+<div class="form-group">
+<h3>Add EMI/Expense</h3>
+<input id="wifeExpenseAmount" placeholder="Amount ₹" type="number">
+<input id="wifeExpenseDesc" placeholder="Description">
+<select id="wifeExpenseType">
+<option value="EMI">Loan EMI</option>
+<option value="Expense">Household Expense</option>
+</select>
+<button onclick="addExpense('wife')">💸 Add Transaction</button>
+</div>
+</div>
+<div class="transaction-list">
+<h3>Recent Transactions</h3>
+<div id="wifeTransactions"></div>
+</div>
+</div>
+</div>
+
+<!-- Notification Template -->
+<div id="notificationTemplate" class="notification"></div>
+
+<script>
+// Global state (shared "repository")
+let finances = JSON.parse(localStorage.getItem('householdFinances')) || {
+husband: { income: 0, emi: 0, expenses: 0, transactions: [] },
+wife: { income: 0, emi: 0, expenses: 0, transactions: [] },
+alerts: { husband: 0, wife: 0 }
+};
+
+let currentUser = null;
+
+// Request notification permission
+if (Notification.permission === 'default') Notification.requestPermission();
+
+function login(user) {
+currentUser = user;
+document.getElementById('loginScreen').style.display = 'none';
+document.getElementById(`${user}Dashboard`).style.display = 'block';
+updateDashboard();
+updateAlerts();
+}
+
+function logout() {
+currentUser = null;
+document.querySelectorAll('.dashboard').forEach(d => d.style.display = 'none');
+document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function saveData() {
+localStorage.setItem('householdFinances', JSON.stringify(finances));
+}
+
+function notify(message, user = null) {
+// Browser notification
+if (Notification.permission === 'granted') {
+new Notification('Household Finance Alert', { body: message, icon: '/favicon.ico' });
+}
+
+// Visual notification
+const notif = document.getElementById('notificationTemplate');
+notif.textContent = message;
+notif.classList.add('show');
+setTimeout(() => notif.classList.remove('show'), 4000);
+
+// Update alert badge
+if (user) {
+finances.alerts[user]++;
+updateAlerts();
+}
+}
+
+function updateAlerts() {
+['husbandAlerts', 'wifeAlerts'].forEach(id => {
+const badge = document.getElementById(id);
+const user = id.replace('Alerts', '');
+badge.textContent = finances.alerts[user];
+badge.style.display = finances.alerts[user] > 0 ? 'inline-flex' : 'none';
+});
+}
+
+function addIncome(user) {
+const amount = parseFloat(document.getElementById(`${user}IncomeAmount`).value) || 0;
+const desc = document.getElementById(`${user}IncomeDesc`).value || 'Salary';
+
+if (amount > 0) {
+finances[user].income += amount;
+finances[user].transactions.unshift({
+type: 'income', amount, desc, date: new Date().toLocaleString(), user
+});
+saveData();
+updateDashboard();
+
+// Notify partner
+const partner = user === 'husband' ? 'wife' : 'husband';
+notify(`💰 ${user.toUpperCase()} added income ₹${amount.toLocaleString()}: ${desc}`, partner);
+}
+}
+
+function addExpense(user) {
+const amount = parseFloat(document.getElementById(`${user}ExpenseAmount`).value) || 0;
+const desc = document.getElementById(`${user}ExpenseDesc`).value || 'Misc';
+const type = document.getElementById(`${user}ExpenseType`).value;
+
+if (amount > 0) {
+if (type === 'EMI') {
+finances[user].emi += amount;
+} else {
+finances[user].expenses += amount;
+}
+finances[user].transactions.unshift({
+type: type.toLowerCase(), amount, desc, date: new Date().toLocaleString(), user
+});
+saveData();
+updateDashboard();
+
+// Notify partner INSTANTLY (CI/CD commit notification)
+const partner = user === 'husband' ? 'wife' : 'husband';
+notify(`💸 ${user.toUpperCase()} committed ${type}: ₹${amount.toLocaleString()} - ${desc}`, partner);
+}
+}
+
+function updateDashboard() {
+// Calculate balances
+const balance = finances[currentUser].income - finances[currentUser].emi - finances[currentUser].expenses;
+document.getElementById(`${currentUser}Balance`).textContent =
+`Balance: ₹${balance.toLocaleString()} (Income: ₹${finances[currentUser].income.toLocaleString()}, EMI: ₹${finances[currentUser].emi.toLocaleString()}, Expenses: ₹${finances[currentUser].expenses.toLocaleString()})`;
+
+// Update transactions list
+const transactionsDiv = document.getElementById(`${currentUser}Transactions`);
+transactionsDiv.innerHTML = finances[currentUser].transactions.slice(0, 10).map(t => `
+<div class="transaction">
+<span>${t.desc} <small>(${t.type})</small></span>
+<span>${t.type === 'income' ? '+' : '-'}$₹${t.amount.toLocaleString()} ${t.date}</span>
+</div>
+`).join('');
+}
+
+// Auto-refresh every 5 seconds for real-time sync
+setInterval(updateDashboard, 5000);
+</script>
+</body>
+</html>
