@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #taskInput { width: 300px; }
+        #taskList { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>To-Do List Application</h1>
+    <input type="text" id="taskInput" placeholder="Add a new task">
+    <button id="addTask">Add Task</button>
+    <ul id="taskList"></ul>
+
+    <script>
+        const taskInput = document.getElementById('taskInput');
+        const addTaskButton = document.getElementById('addTask');
+        const taskList = document.getElementById('taskList');
+
+        // Load tasks from local storage
+        function loadTasks() {
+            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.forEach(task => addTaskToDOM(task));
+        }
+
+        // Save tasks to local storage
+        function saveTasks(tasks) {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Add task to DOM
+        function addTaskToDOM(task) {
+            const li = document.createElement('li');
+            li.textContent = task;
+            taskList.appendChild(li);
+        }
+
+        // Add task on button click
+        addTaskButton.addEventListener('click', () => {
+            const task = taskInput.value;
+            if (task) {
+                addTaskToDOM(task);
+                taskInput.value = '';
+                const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                tasks.push(task);
+                saveTasks(tasks);
+            }
+        });
+
+        // Load tasks on page load
+        loadTasks();
+    </script>
+</body>
+</html>
