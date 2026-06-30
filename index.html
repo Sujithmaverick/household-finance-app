@@ -17,7 +17,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: l
 .dashboard { display: none; }
 .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 .balance-card { background: linear-gradient(45deg, #ff6b6b, #feca57); color: white; padding: 30px; border-radius: 20px; text-align: center; font-size: 24px; font-weight: bold; }
-.notification { position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(400px); transition: all 0.3s; z-index: 1000; }
+.notification { position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(400%); transition: transform 0.3s ease; }
 .notification.show { transform: translateX(0); }
 .form-group { margin-bottom: 20px; }
 input, select, button { padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px; }
@@ -28,16 +28,21 @@ button:hover { background: #5a67d8; }
 .transaction:last-child { border-bottom: none; }
 .alert-badge { background: #ff4444; color: white; border-radius: 50%; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; margin-left: 10px; }
 @media (max-width: 768px) { .container { padding: 10px; } .header { flex-direction: column; gap: 15px; text-align: center; } }
+
+.modal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); }
+.modal .card { background: white; padding: 20px; border-radius: 12px; width: 320px; }
 </style>
 </head>
 <body>
 <div class="container">
 <!-- Login Screen -->
 <div id="loginScreen" class="login-screen">
-<h1 style="color: white; font-size: 48px; margin-bottom: 40px;">Household Finance</h1>
-<p style="color: white; font-size: 20px; margin-bottom: 40px;">CI/CD Pipeline for Family Budget</p>
-<button class="login-btn husband" onclick="login('husband')">👨 Husband Login</button>
-<button class="login-btn wife" onclick="login('wife')">👩 Wife Login</button>
+<h1 style="color: white; font-size: 48px; margin-bottom: 20px;">Household Finance</h1>
+<p style="color: white; font-size: 18px; margin-bottom: 20px;">CI/CD Pipeline for Family Budget</p>
+<div>
+<button class="login-btn husband" onclick="showAuth('husband')">👨 Husband Login / Register</button>
+<button class="login-btn wife" onclick="showAuth('wife')">👩 Wife Login / Register</button>
+</div>
 </div>
 
 <!-- Husband Dashboard -->
@@ -108,124 +113,147 @@ button:hover { background: #5a67d8; }
 <!-- Notification Template -->
 <div id="notificationTemplate" class="notification"></div>
 
+<!-- Auth Modal -->
+<div id="authModal" class="modal" style="display: none;">
+<div class="card">
+<h3 id="authTitle">Login</h3>
+<input id="authEmail" placeholder="Email" type="email">
+<input id="authPassword" placeholder="Password" type="password">
+<div style="display:flex; gap:10px; margin-top:10px;">
+<button onclick="doAuth('login')">Login</button>
+<button onclick="doAuth('register')">Register</button>
+<button onclick="closeAuth()" style="background:#eee; color:#333;">Cancel</button>
+</div>
+</div>
+</div>
+
 <script>
-// Global state (shared "repository")
-let finances = JSON.parse(localStorage.getItem('householdFinances')) || {
-husband: { income: 0, emi: 0, expenses: 0, transactions: [] },
-wife: { income: 0, emi: 0, expenses: 0, transactions: [] },
-alerts: { husband: 0, wife: 0 }
-};
+let currentRole = null; // 'husband' or 'wife'
+let transactions = [];
 
-let currentUser = null;
+function showAuth(role) {
+  currentRole = role;
+  document.getElementById('authTitle').textContent = `Login / Register (${role})`;
+  document.getElementById('authModal').style.display = 'flex';
+}
+function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
 
-// Request notification permission
-if (Notification.permission === 'default') Notification.requestPermission();
-
-function login(user) {
-currentUser = user;
-document.getElementById('loginScreen').style.display = 'none';
-document.getElementById(`${user}Dashboard`).style.display = 'block';
-updateDashboard();
-updateAlerts();
+async function doAuth(mode) {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value.trim();
+  if (!email || !password) return alert('Provide email and password');
+  try {
+    const res = await fetch(`/api/${mode}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const body = await res.json();
+    if (!res.ok) return alert(body.error || 'Auth failed');
+    // success
+    closeAuth();
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById(`${currentRole}Dashboard`).style.display = 'block';
+    loadTransactions();
+  } catch (err) { console.error(err); alert('Network error'); }
 }
 
-function logout() {
-currentUser = null;
-document.querySelectorAll('.dashboard').forEach(d => d.style.display = 'none');
-document.getElementById('loginScreen').style.display = 'flex';
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  document.querySelectorAll('.dashboard').forEach(d => d.style.display = 'none');
+  document.getElementById('loginScreen').style.display = 'flex';
+  currentRole = null;
+  transactions = [];
 }
 
-function saveData() {
-localStorage.setItem('householdFinances', JSON.stringify(finances));
+function notify(message) {
+  const notif = document.getElementById('notificationTemplate');
+  notif.textContent = message;
+  notif.classList.add('show');
+  setTimeout(() => notif.classList.remove('show'), 4000);
 }
 
-function notify(message, user = null) {
-// Browser notification
-if (Notification.permission === 'granted') {
-new Notification('Household Finance Alert', { body: message, icon: '/favicon.ico' });
+async function loadTransactions() {
+  try {
+    const res = await fetch('/api/transactions');
+    if (!res.ok) {
+      if (res.status === 401) { alert('Session expired'); logout(); }
+      return;
+    }
+    transactions = await res.json();
+    updateDashboard();
+  } catch (err) { console.error(err); }
 }
 
-// Visual notification
-const notif = document.getElementById('notificationTemplate');
-notif.textContent = message;
-notif.classList.add('show');
-setTimeout(() => notif.classList.remove('show'), 4000);
-
-// Update alert badge
-if (user) {
-finances.alerts[user]++;
-updateAlerts();
-}
-}
-
-function updateAlerts() {
-['husbandAlerts', 'wifeAlerts'].forEach(id => {
-const badge = document.getElementById(id);
-const user = id.replace('Alerts', '');
-badge.textContent = finances.alerts[user];
-badge.style.display = finances.alerts[user] > 0 ? 'inline-flex' : 'none';
-});
+async function addIncome(role) {
+  const amount = parseFloat(document.getElementById(`${role}IncomeAmount`).value) || 0;
+  const desc = document.getElementById(`${role}IncomeDesc`).value || 'Salary';
+  if (amount <= 0) return alert('Enter a valid amount');
+  try {
+    const res = await fetch('/api/transactions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'income', amount, description: desc })
+    });
+    if (!res.ok) return alert('Failed to add');
+    const body = await res.json();
+    transactions.unshift({ id: body.id, type: 'income', amount, description: desc, created_at: new Date().toISOString() });
+    saveAndRefresh();
+    notify(`Added income ₹${amount.toLocaleString()}`);
+  } catch (err) { console.error(err); }
 }
 
-function addIncome(user) {
-const amount = parseFloat(document.getElementById(`${user}IncomeAmount`).value) || 0;
-const desc = document.getElementById(`${user}IncomeDesc`).value || 'Salary';
-
-if (amount > 0) {
-finances[user].income += amount;
-finances[user].transactions.unshift({
-type: 'income', amount, desc, date: new Date().toLocaleString(), user
-});
-saveData();
-updateDashboard();
-
-// Notify partner
-const partner = user === 'husband' ? 'wife' : 'husband';
-notify(`💰 ${user.toUpperCase()} added income ₹${amount.toLocaleString()}: ${desc}`, partner);
+async function addExpense(role) {
+  const amount = parseFloat(document.getElementById(`${role}ExpenseAmount`).value) || 0;
+  const desc = document.getElementById(`${role}ExpenseDesc`).value || 'Misc';
+  const typeSelect = document.getElementById(`${role}ExpenseType`);
+  const type = typeSelect.options[typeSelect.selectedIndex].value.toLowerCase();
+  if (amount <= 0) return alert('Enter a valid amount');
+  try {
+    const res = await fetch('/api/transactions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, amount, description: desc })
+    });
+    if (!res.ok) return alert('Failed to add');
+    const body = await res.json();
+    transactions.unshift({ id: body.id, type, amount, description: desc, created_at: new Date().toISOString() });
+    saveAndRefresh();
+    notify(`Added ${type} ₹${amount.toLocaleString()}`);
+  } catch (err) { console.error(err); }
 }
+
+async function deleteTransaction(txId) {
+  if (!confirm('Delete this transaction?')) return;
+  try {
+    const res = await fetch(`/api/transactions/${txId}`, { method: 'DELETE' });
+    if (!res.ok) return alert('Delete failed');
+    transactions = transactions.filter(t => t.id !== txId);
+    saveAndRefresh();
+  } catch (err) { console.error(err); }
 }
 
-function addExpense(user) {
-const amount = parseFloat(document.getElementById(`${user}ExpenseAmount`).value) || 0;
-const desc = document.getElementById(`${user}ExpenseDesc`).value || 'Misc';
-const type = document.getElementById(`${user}ExpenseType`).value;
-
-if (amount > 0) {
-if (type === 'EMI') {
-finances[user].emi += amount;
-} else {
-finances[user].expenses += amount;
-}
-finances[user].transactions.unshift({
-type: type.toLowerCase(), amount, desc, date: new Date().toLocaleString(), user
-});
-saveData();
-updateDashboard();
-
-// Notify partner INSTANTLY (CI/CD commit notification)
-const partner = user === 'husband' ? 'wife' : 'husband';
-notify(`💸 ${user.toUpperCase()} committed ${type}: ₹${amount.toLocaleString()} - ${desc}`, partner);
-}
+function saveAndRefresh() {
+  updateDashboard();
 }
 
 function updateDashboard() {
-// Calculate balances
-const balance = finances[currentUser].income - finances[currentUser].emi - finances[currentUser].expenses;
-document.getElementById(`${currentUser}Balance`).textContent =
-`Balance: ₹${balance.toLocaleString()} (Income: ₹${finances[currentUser].income.toLocaleString()}, EMI: ₹${finances[currentUser].emi.toLocaleString()}, Expenses: ₹${finances[currentUser].expenses.toLocaleString()})`;
+  if (!currentRole) return;
+  const userTx = transactions;
+  const income = userTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const emi = userTx.filter(t => t.type === 'emi').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const expenses = userTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const balance = income - emi - expenses;
+  document.getElementById(`${currentRole}Balance`).textContent = `Balance: ₹${balance.toLocaleString()} (Income: ₹${income.toLocaleString()}, EMI: ₹${emi.toLocaleString()}, Expenses: ₹${expenses.toLocaleString()})`;
 
-// Update transactions list
-const transactionsDiv = document.getElementById(`${currentUser}Transactions`);
-transactionsDiv.innerHTML = finances[currentUser].transactions.slice(0, 10).map(t => `
-<div class="transaction">
-<span>${t.desc} <small>(${t.type})</small></span>
-<span>${t.type === 'income' ? '+' : '-'}$₹${t.amount.toLocaleString()} ${t.date}</span>
-</div>
-`).join('');
+  const transactionsDiv = document.getElementById(`${currentRole}Transactions`);
+  transactionsDiv.innerHTML = userTx.slice(0, 50).map(t => `
+    <div class="transaction">
+      <span>${t.description || ''} <small>(${t.type})</small></span>
+      <span>${t.type === 'income' ? '+' : '-'} ₹${parseFloat(t.amount).toLocaleString()} <small>${new Date(t.created_at).toLocaleString()}</small> <button onclick="deleteTransaction(${t.id})">Delete</button></span>
+    </div>
+  `).join('');
 }
 
-// Auto-refresh every 5 seconds for real-time sync
-setInterval(updateDashboard, 5000);
+// periodically refresh transactions
+setInterval(() => { if (currentRole) loadTransactions(); }, 5000);
 </script>
 </body>
 </html>
