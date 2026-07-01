@@ -36,8 +36,8 @@ button:hover { background: #5a67d8; }
 <div id="loginScreen" class="login-screen">
 <h1 style="color: white; font-size: 48px; margin-bottom: 40px;">Household Finance</h1>
 <p style="color: white; font-size: 20px; margin-bottom: 40px;">CI/CD Pipeline for Family Budget</p>
-<button class="login-btn husband" onclick="login('husband')">👨 Husband Login</button>
-<button class="login-btn wife" onclick="login('wife')">👩 Wife Login</button>
+<button class="login-btn husband" onclick="showLogin('husband')">👨 Husband Login</button>
+<button class="login-btn wife" onclick="showLogin('wife')">👩 Wife Login</button>
 </div>
 
 <!-- Husband Dashboard -->
@@ -116,18 +116,36 @@ wife: { income: 0, emi: 0, expenses: 0, transactions: [] },
 alerts: { husband: 0, wife: 0 }
 };
 
+let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || {};
 let currentUser = null;
 
 // Request notification permission
 if (Notification.permission === 'default') Notification.requestPermission();
 
-function login(user) {
-currentUser = user;
-document.getElementById('loginScreen').style.display = 'none';
-document.getElementById(`${user}Dashboard`).style.display = 'block';
-clearInputFields(user);
-updateDashboard();
-updateAlerts();
+function showLogin(user) {
+  currentUser = user;
+  const email = prompt(`Enter email to login/register (${user}):`);
+  if (!email) return;
+  
+  const password = prompt(`Enter password (${user}):`);
+  if (!password) return;
+  
+  // Auto-register if user doesn't exist, otherwise verify password
+  if (!registeredUsers[email]) {
+    registeredUsers[email] = password;
+    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    alert('Registered successfully!');
+  } else if (registeredUsers[email] !== password) {
+    alert('Incorrect password');
+    return;
+  }
+  
+  // Login successful
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById(`${user}Dashboard`).style.display = 'block';
+  clearInputFields(user);
+  updateDashboard();
+  updateAlerts();
 }
 
 function logout() {
