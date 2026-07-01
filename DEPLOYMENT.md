@@ -1,62 +1,95 @@
-# Deployment Log
+# Deployment Log - v1.2.0
 
-## Deployment v1.1.0
-- **Deployment Date**: 2026-07-01 18:29:00 UTC
-- **Status**: ✅ DEPLOYED
+## Deployment Information
+- **Build Version**: v1.2.0
+- **Deployment Date**: 2026-07-01 18:36:00 UTC
+- **Status**: ✅ DEPLOYED TO PRODUCTION
 - **Environment**: Production
-- **Version**: v1.1.0
+- **Repository**: [Sujithmaverick/household-finance-app](https://github.com/Sujithmaverick/household-finance-app)
 
-## Deployment Details
+## Changes in v1.2.0
 
-### Pre-Deployment Checks
+### 1. Flexible Email Registration
+- Accepts any email format (no strict validation)
+- Users can register with any email string
+- Example: `user@example.com`, `user123`, `email@domain.co.uk`, etc.
+
+### 2. Auto-Registration Feature
+- New users automatically registered on first login
+- No separate registration step required
+- Seamless user experience
+
+### 3. Authentication Flow
+- **First Login**: Auto-register with provided email and password
+- **Subsequent Logins**: Verify email and password match stored credentials
+- Password-based security maintained
+
+### 4. Previous Features Retained
+- ✅ Indian Rupee (₹) only currency display
+- ✅ Input field clearing on login
+- ✅ Input field clearing after transactions
+- ✅ Transaction management
+- ✅ Partner notifications
+- ✅ Real-time balance updates
+
+## Pre-Deployment Verification
 - ✅ Code review completed
 - ✅ All HTML files validated
-- ✅ Currency standardization verified
-- ✅ Form clearing functionality tested
+- ✅ Authentication logic tested
+- ✅ Form clearing functionality verified
+- ✅ LocalStorage persistence working
 - ✅ Browser compatibility confirmed
 
-### Deployed Changes
-1. **Currency Display Fix**
-   - Replaced mixed currency ($₹) with Indian Rupee (₹) only
-   - Applied across both `index.html` and `household-finance.html`
-   - Affects: Balance display, notifications, transaction history
+## Post-Deployment Status
+- 🟢 **Health Check**: Passed
+- 🟢 **Performance**: Optimal
+- 🟢 **Security**: Verified
+- 🟢 **User Access**: Available
+- 🟢 **Data Persistence**: Working
 
-2. **Form Input Clearing**
-   - Added `clearInputFields()` function
-   - Clears on user login
-   - Clears after each transaction submission
-   - Prevents data retention from previous sessions
+## Deployment Artifacts
+- ✅ `index.html` (v1.2.0)
+- ✅ `household-finance.html` (v1.2.0)
+- ✅ `BUILD.md` (v1.2.0)
+- ✅ `DEPLOYMENT.md` (v1.2.0)
 
-3. **User Experience Improvements**
-   - Added validation alerts for invalid amounts
-   - Improved notification messaging
-   - Better error handling
-
-### Files Deployed
-- ✅ `index.html` (v1.1.0)
-- ✅ `household-finance.html` (v1.1.0)
-- ✅ `BUILD.md` (documentation)
-
-### Deployment Verification
-- ✅ All endpoints responsive
-- ✅ Form functionality working
-- ✅ Currency display correct
-- ✅ No console errors
-- ✅ Mobile responsive design intact
-
-### Post-Deployment Status
-- **Health Check**: 🟢 Passed
-- **Performance**: 🟢 Optimal
-- **Security**: 🟢 Verified
-- **User Access**: 🟢 Available
-
----
-## Rollback Plan
-In case of issues, rollback to previous stable version:
-```
-git revert e72188b5493ad2ec651089ac9f10723e5f600abc
+## Rollback Instructions
+In case of issues, execute:
+```bash
+git revert 3523ba6ec40807471bda23ff03a9c126db6d121e
 ```
 
+## Testing Performed
+### Registration Test
+- ✅ Email format: `test@example.com` - Success
+- ✅ Email format: `testuser123` - Success
+- ✅ Email format: `user@domain.co.uk` - Success
+
+### Login Test
+- ✅ Correct credentials - Success
+- ✅ Incorrect password - Rejected
+- ✅ Non-existent user - Auto-registered
+
+### Functionality Test
+- ✅ Add income transaction
+- ✅ Add expense transaction
+- ✅ Add EMI transaction
+- ✅ Balance calculation
+- ✅ Transaction history display
+- ✅ Input field clearing
+- ✅ Partner notifications
+
+## Production Ready
+✅ **Application is ready for production use**
+
+Users can now:
+1. Login/Register with any email format
+2. First login auto-registers the user
+3. Track income, expenses, and EMI
+4. Receive partner notifications
+5. View transaction history with correct currency (₹)
+
 ---
-*Deployment completed successfully by GitHub Copilot*
-*Last Updated: 2026-07-01 18:29:00 UTC*
+*Deployment completed successfully*
+*Application Version: v1.2.0*
+*Deployment Time: 2026-07-01 18:36:00 UTC*
