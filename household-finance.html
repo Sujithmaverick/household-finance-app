@@ -125,6 +125,7 @@ function login(user) {
 currentUser = user;
 document.getElementById('loginScreen').style.display = 'none';
 document.getElementById(`${user}Dashboard`).style.display = 'block';
+clearInputFields(user);
 updateDashboard();
 updateAlerts();
 }
@@ -133,6 +134,13 @@ function logout() {
 currentUser = null;
 document.querySelectorAll('.dashboard').forEach(d => d.style.display = 'none');
 document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function clearInputFields(user) {
+document.getElementById(`${user}IncomeAmount`).value = '';
+document.getElementById(`${user}IncomeDesc`).value = '';
+document.getElementById(`${user}ExpenseAmount`).value = '';
+document.getElementById(`${user}ExpenseDesc`).value = '';
 }
 
 function saveData() {
@@ -177,11 +185,14 @@ finances[user].transactions.unshift({
 type: 'income', amount, desc, date: new Date().toLocaleString(), user
 });
 saveData();
+clearInputFields(user);
 updateDashboard();
 
 // Notify partner
 const partner = user === 'husband' ? 'wife' : 'husband';
 notify(`💰 ${user.toUpperCase()} added income ₹${amount.toLocaleString()}: ${desc}`, partner);
+} else {
+alert('Please enter a valid amount');
 }
 }
 
@@ -200,15 +211,19 @@ finances[user].transactions.unshift({
 type: type.toLowerCase(), amount, desc, date: new Date().toLocaleString(), user
 });
 saveData();
+clearInputFields(user);
 updateDashboard();
 
 // Notify partner INSTANTLY (CI/CD commit notification)
 const partner = user === 'husband' ? 'wife' : 'husband';
 notify(`💸 ${user.toUpperCase()} committed ${type}: ₹${amount.toLocaleString()} - ${desc}`, partner);
+} else {
+alert('Please enter a valid amount');
 }
 }
 
 function updateDashboard() {
+if (!currentUser) return;
 // Calculate balances
 const balance = finances[currentUser].income - finances[currentUser].emi - finances[currentUser].expenses;
 document.getElementById(`${currentUser}Balance`).textContent =
