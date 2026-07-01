@@ -17,7 +17,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: l
 .dashboard { display: none; }
 .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 .balance-card { background: linear-gradient(45deg, #ff6b6b, #feca57); color: white; padding: 30px; border-radius: 20px; text-align: center; font-size: 24px; font-weight: bold; }
-.notification { position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(400px); transition: all 0.3s; z-index: 1000; }
+.notification { position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(400px); transition: transform 0.3s; z-index: 1000; }
 .notification.show { transform: translateX(0); }
 .form-group { margin-bottom: 20px; }
 input, select, button { padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px; }
@@ -219,7 +219,7 @@ const transactionsDiv = document.getElementById(`${currentUser}Transactions`);
 transactionsDiv.innerHTML = finances[currentUser].transactions.slice(0, 10).map(t => `
 <div class="transaction">
 <span>${t.desc} <small>(${t.type})</small></span>
-<span>${t.type === 'income' ? '+' : '-'}$₹${t.amount.toLocaleString()} ${t.date}</span>
+<span>${t.type === 'income' ? '+' : '-'}₹${t.amount.toLocaleString()} ${t.date}</span>
 </div>
 `).join('');
 }
